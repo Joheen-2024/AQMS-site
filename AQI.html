@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Air Quality Monitoring</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to right, #00c6ff, #0072ff);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-size: cover;
+        }
+
+        .container {
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 30px 50px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #0072ff;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 36px;
+        }
+
+        p {
+            font-size: 18px;
+            color: #333;
+        }
+
+        .input-container {
+            margin: 20px 0;
+        }
+
+        input[type="text"] {
+            padding: 12px 20px;
+            width: 70%;
+            font-size: 16px;
+            border: 2px solid #0072ff;
+            border-radius: 25px;
+            margin-right: 10px;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: #004b87;
+        }
+
+        button {
+            padding: 12px 25px;
+            font-size: 16px;
+            background-color: #0072ff;
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #004b87;
+        }
+
+        .results {
+            margin-top: 30px;
+            display: none;
+            background-color: #fff;
+            color: #333;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+
+        .result-item {
+            font-size: 18px;
+            margin: 5px 0;
+        }
+
+        .result-item span {
+            font-weight: 600;
+            color: #0072ff;
+        }
+
+        .result-item p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        footer {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Live Air Quality Monitoring</h1>
+        <p>Enter a city to get the current air quality data</p>
+
+        <div class="input-container">
+            <input type="text" id="cityInput" placeholder="Enter city name">
+            <button onclick="getAirQuality()">Get Air Quality</button>
+        </div>
+
+        <div id="airQualityData" class="results">
+            <!-- Air quality data will be shown here -->
+        </div>
+    </div>
+
+    <footer>
+    </footer>
+
+    <script>
+        const apiKey = '515637f78636d1d89af2469b7694da5c'; // Replace 'YOUR_API_KEY' with your OpenWeatherMap API key
+
+        async function getAirQuality() {
+            const city = document.getElementById('cityInput').value.trim();
+
+            if (city === '') {
+                alert('Please enter a city name!');
+                return;
+            }
+
+            try {
+                // Fetching coordinates for the city from OpenWeatherMap
+                const geoResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}`);
+                const geoData = await geoResponse.json();
+
+                if (geoData.cod !== 200) {
+                    alert('City not found! Please try again.');
+                    return;
+                }
+
+                const lat = geoData.coord.lat;
+                const lon = geoData.coord.lon;
+
+                // Fetching air quality data using the coordinates
+                const airQualityResponse = await fetch(`https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`);
+                const airQualityData = await airQualityResponse.json();
+
+                displayAirQuality(city, airQualityData.list[0].main.aqi, airQualityData.list[0].components);
+            } catch (error) {
+                alert('Error fetching data, please try again later!');
+                console.error('Error:', error);
+            }
+        }
+
+        function displayAirQuality(city, aqi, components) {
+            const resultContainer = document.getElementById('airQualityData');
+
+            let airQualityLevel = '';
+            if (aqi === 1) airQualityLevel = 'Good';
+            else if (aqi === 2) airQualityLevel = 'Fair';
+            else if (aqi === 3) airQualityLevel = 'Moderate';
+            else if (aqi === 4) airQualityLevel = 'Poor';
+            else if (aqi === 5) airQualityLevel = 'Very Poor';
+
+            resultContainer.innerHTML = `
+                <h2>Air Quality in ${city}</h2>
+                <p class="result-item"><span>Air Quality Index (AQI):</span> ${aqi} (${airQualityLevel})</p>
+                <p class="result-item"><span>PM2.5:</span> ${components.pm2_5} µg/m³</p>
+                <p class="result-item"><span>PM10:</span> ${components.pm10} µg/m³</p>
+                <p class="result-item"><span>NO2:</span> ${components.no2} µg/m³</p>
+                <p class="result-item"><span>CO:</span> ${components.co} µg/m³</p>
+                <p class="result-item"><span>O3:</span> ${components.o3} µg/m³</p>
+                <p class="result-item"><span>SO2:</span> ${components.so2} µg/m³</p>
+            `;
+            resultContainer.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
