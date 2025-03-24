@@ -15,7 +15,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
             height: 100vh;
             background-size: cover;
         }
@@ -86,20 +85,28 @@
             text-align: left;
         }
 
-        .source-button {
-            margin-top: 20px;
-            padding: 12px 20px;
-            font-size: 16px;
-            background-color: #ff5722;
-            color: #fff;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
+        .result-item {
+            font-size: 18px;
+            margin: 5px 0;
         }
 
-        .source-button:hover {
-            background-color: #e64a19;
+        .result-item span {
+            font-weight: 600;
+            color: #0072ff;
+        }
+
+        .result-item p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        footer {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            font-size: 14px;
+            color: #fff;
         }
     </style>
 </head>
@@ -113,13 +120,16 @@
             <button onclick="getAirQuality()">Get Air Quality</button>
         </div>
 
-        <div id="airQualityData" class="results"></div>
+        <div id="airQualityData" class="results">
+            <!-- Air quality data will be shown here -->
+        </div>
     </div>
 
-    <button class="source-button" onclick="window.open('https://openweathermap.org/api/air-pollution', '_blank')">View Data Source</button>
+    <footer>
+    </footer>
 
     <script>
-        const apiKey = '515637f78636d1d89af2469b7694da5c';
+        const apiKey = '515637f78636d1d89af2469b7694da5c'; // Replace 'YOUR_API_KEY' with your OpenWeatherMap API key
 
         async function getAirQuality() {
             const city = document.getElementById('cityInput').value.trim();
@@ -130,6 +140,7 @@
             }
 
             try {
+                // Fetching coordinates for the city from OpenWeatherMap
                 const geoResponse = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${apiKey}`);
                 const geoData = await geoResponse.json();
 
@@ -140,6 +151,8 @@
 
                 const lat = geoData.coord.lat;
                 const lon = geoData.coord.lon;
+
+                // Fetching air quality data using the coordinates
                 const airQualityResponse = await fetch(`https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${apiKey}`);
                 const airQualityData = await airQualityResponse.json();
 
@@ -152,17 +165,23 @@
 
         function displayAirQuality(city, aqi, components) {
             const resultContainer = document.getElementById('airQualityData');
-            let airQualityLevel = ['Good', 'Fair', 'Moderate', 'Poor', 'Very Poor'][aqi - 1];
+
+            let airQualityLevel = '';
+            if (aqi === 1) airQualityLevel = 'Good';
+            else if (aqi === 2) airQualityLevel = 'Fair';
+            else if (aqi === 3) airQualityLevel = 'Moderate';
+            else if (aqi === 4) airQualityLevel = 'Poor';
+            else if (aqi === 5) airQualityLevel = 'Very Poor';
 
             resultContainer.innerHTML = `
                 <h2>Air Quality in ${city}</h2>
-                <p><strong>AQI:</strong> ${aqi} (${airQualityLevel})</p>
-                <p><strong>PM2.5:</strong> ${components.pm2_5} µg/m³</p>
-                <p><strong>PM10:</strong> ${components.pm10} µg/m³</p>
-                <p><strong>NO2:</strong> ${components.no2} µg/m³</p>
-                <p><strong>CO:</strong> ${components.co} µg/m³</p>
-                <p><strong>O3:</strong> ${components.o3} µg/m³</p>
-                <p><strong>SO2:</strong> ${components.so2} µg/m³</p>
+                <p class="result-item"><span>Air Quality Index (AQI):</span> ${aqi} (${airQualityLevel})</p>
+                <p class="result-item"><span>PM2.5:</span> ${components.pm2_5} µg/m³</p>
+                <p class="result-item"><span>PM10:</span> ${components.pm10} µg/m³</p>
+                <p class="result-item"><span>NO2:</span> ${components.no2} µg/m³</p>
+                <p class="result-item"><span>CO:</span> ${components.co} µg/m³</p>
+                <p class="result-item"><span>O3:</span> ${components.o3} µg/m³</p>
+                <p class="result-item"><span>SO2:</span> ${components.so2} µg/m³</p>
             `;
             resultContainer.style.display = 'block';
         }
